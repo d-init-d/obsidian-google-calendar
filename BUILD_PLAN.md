@@ -845,15 +845,15 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - Milestone 6, theme rules, date utilities, state shape, event modal open contract.
 - Checklist:
-  - [ ] Render compact header with title, sync, and expand controls.
-  - [ ] Render mini month with previous/next, today, selected date, and event markers.
-  - [ ] Render agenda grouped by day.
-  - [ ] Support loading, empty, error, disconnected, and needs-auth states.
-  - [ ] Click date updates selected day/range.
-  - [ ] Click event calls the event modal open handler.
-  - [ ] Keep layout usable at 260-360px width.
+  - [x] Render compact header with title, sync, and expand controls.
+  - [x] Render mini month with previous/next, today, selected date, and event markers.
+  - [x] Render agenda grouped by day.
+  - [x] Support loading, empty, error, disconnected, and needs-auth states.
+  - [x] Click date updates selected day/range.
+  - [x] Click event calls the event modal open handler.
+  - [x] Keep layout usable at 260-360px width.
 - Verification:
-  - [ ] `npm run build` passes.
+  - [x] `npm run build` passes.
   - [ ] No overlapping text in compact markup assumptions.
 
 #### T09 - Full Tab Month And Agenda Views
@@ -866,15 +866,15 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - Milestone 7 month and agenda sections, date utilities, event display type.
 - Checklist:
-  - [ ] Month grid uses 7 columns and respects week start.
-  - [ ] Day cells show date, today marker, out-of-range styling, event chips, and more indicator.
-  - [ ] Agenda groups events by date with time, title, and calendar color.
-  - [ ] Empty slot/date click opens create flow with prefilled date.
-  - [ ] Event click opens edit flow.
-  - [ ] View does not lose selected date when switching modes.
+  - [x] Month grid uses 7 columns and respects week start.
+  - [x] Day cells show date, today marker, out-of-range styling, event chips, and more indicator.
+  - [x] Agenda groups events by date with time, title, and calendar color.
+  - [x] Empty slot/date click opens create flow with prefilled date.
+  - [x] Event click opens edit flow.
+  - [x] View does not lose selected date when switching modes.
 - Verification:
-  - [ ] `npm run build` passes.
-  - [ ] Month/agenda renderers are pure enough to reuse from `CalendarView`.
+  - [x] `npm run build` passes.
+  - [x] Month/agenda renderers are pure enough to reuse from `CalendarView`.
 
 #### T10 - Full Tab Week And Day Time Grids
 
@@ -886,17 +886,17 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - Milestone 7 week/day sections, event layout helper contract.
 - Checklist:
-  - [ ] Render weekday/day header.
-  - [ ] Render all-day row.
-  - [ ] Render hourly grid.
-  - [ ] Position timed event blocks by start/end time.
-  - [ ] Show current time indicator when viewing today.
-  - [ ] Empty time slot click opens create flow with prefilled date/time.
-  - [ ] Event click opens edit flow.
-  - [ ] Handle overlapping events with stable visual columns.
+  - [x] Render weekday/day header.
+  - [x] Render all-day row.
+  - [x] Render hourly grid.
+  - [x] Position timed event blocks by start/end time.
+  - [x] Show current time indicator when viewing today.
+  - [x] Empty time slot click opens create flow with prefilled date/time.
+  - [x] Event click opens edit flow.
+  - [x] Handle overlapping events with stable visual columns.
 - Verification:
-  - [ ] `npm run build` passes.
-  - [ ] Timed grid avoids layout math inside click handlers where possible.
+  - [x] `npm run build` passes.
+  - [x] Timed grid avoids layout math inside click handlers where possible.
 
 #### T11 - Event Modal UI And Validation
 
@@ -908,17 +908,17 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - Milestone 8, data types, Google all-day/timed event shape, theme rules.
 - Checklist:
-  - [ ] Support create and edit mode.
-  - [ ] Fields: title, calendar, all-day, start date/time, end date/time, location, description.
-  - [ ] Buttons: save, delete for existing events, cancel.
-  - [ ] Validate calendar selection.
-  - [ ] Validate end is after start.
-  - [ ] Warn on empty title without blocking if Google accepts it.
-  - [ ] Confirm before delete.
-  - [ ] Return normalized payload for API insert/patch.
+  - [x] Support create and edit mode.
+  - [x] Fields: title, calendar, all-day, start date/time, end date/time, location, description.
+  - [x] Buttons: save, delete for existing events, cancel.
+  - [x] Validate calendar selection.
+  - [x] Validate end is after start.
+  - [x] Warn on empty title without blocking if Google accepts it.
+  - [x] Confirm before delete.
+  - [x] Return normalized payload for API insert/patch.
 - Verification:
-  - [ ] `npm run build` passes.
-  - [ ] Modal never displays raw token or auth state.
+  - [x] `npm run build` passes.
+  - [x] Modal never displays raw token or auth state.
 
 #### T12 - Mutations And Refresh Integration
 

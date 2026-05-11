@@ -1,9 +1,14 @@
 import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
-import type { CalendarViewMode, CalendarSurface } from "../types";
-import { createCalendarState, setSurface, setCalendarView, setAnchorDate } from "../state/CalendarState";
+import type { CalendarEvent, CalendarViewMode, CalendarSurface } from "../types";
+import { createCalendarState, setSurface, setCalendarView, setAnchorDate, setSelectedDate, setLoading, setError } from "../state/CalendarState";
 import type { CalendarState } from "../types";
 import { renderToolbar } from "./renderToolbar";
-import { addDays, addWeeks, addMonths } from "../utils/dateRange";
+import { renderSidebar, type SidebarStatus } from "./renderSidebar";
+import { renderMonthView } from "./renderMonthView";
+import { renderAgendaView } from "./renderAgendaView";
+import { renderWeekView, type RenderedWeekView } from "./renderWeekView";
+import { renderDayView, type RenderedDayView } from "./renderDayView";
+import { addDays, addWeeks, addMonths, startOfDay } from "../utils/dateRange";
 
 export const GOOGLE_CALENDAR_VIEW_TYPE = "google-calendar-view";
 
@@ -13,6 +18,12 @@ export class CalendarView extends ItemView {
   private bodyContainerEl: HTMLElement | null = null;
   private resizeObserver: ResizeObserver | null = null;
   private isCompact = false;
+
+  private renderedWeekView: RenderedWeekView | null = null;
+  private renderedDayView: RenderedDayView | null = null;
+
+  private eventStatus: SidebarStatus = "loading";
+  private eventErrorMessage: string | null = null;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -39,6 +50,8 @@ export class CalendarView extends ItemView {
 
   async onClose(): Promise<void> {
     this.resizeObserver?.disconnect();
+    this.renderedWeekView?.destroy();
+    this.renderedDayView?.destroy();
   }
 
   private updateSurfaceFromLeaf(): void {
@@ -95,17 +108,145 @@ export class CalendarView extends ItemView {
     if (!container) return;
     container.empty();
 
+    this.renderedWeekView?.destroy();
+    this.renderedWeekView = null;
+    this.renderedDayView?.destroy();
+    this.renderedDayView = null;
+
     const surface = this.state.surface;
     const view = this.state.calendarView;
     const anchorDate = this.state.anchorDate;
 
     const shell = container.createDiv("ogc-shell");
 
-    shell.createDiv("ogc-shell__placeholder", (el) => {
-      el.setText(surface === "sidebar"
-        ? "Google Calendar"
-        : `Google Calendar — ${view} — ${anchorDate.toDateString()}`);
+    if (surface === "sidebar") {
+      this.renderSidebarSurface(shell, view, anchorDate);
+    } else {
+      this.renderFullSurface(shell, view, anchorDate);
+    }
+  }
+
+  private renderSidebarSurface(shell: HTMLElement, view: CalendarViewMode, anchorDate: Date): void {
+    const status = this.resolveSidebarStatus();
+
+    renderSidebar(shell, {
+      title: "Google Calendar",
+      status,
+      errorMessage: this.eventErrorMessage,
+      anchorDate,
+      weekStartsOn: this.state.weekStartsOn,
+      selectedDate: this.state.selectedDate,
+      events: this.state.visibleEventRange ? this.getMockEvents() : [],
+      callbacks: {
+        onDateClick: (date: Date) => {
+          this.state = setSelectedDate(this.state, date);
+          this.state = setAnchorDate(this.state, date);
+          this.renderBody();
+          this.renderToolbar();
+        },
+        onEventClick: (event: CalendarEvent) => {
+          this.onEventClickHandler(event);
+        },
+        onSync: () => this.sync(),
+        onExpand: () => this.expandToFull(),
+      },
     });
+  }
+
+  private renderFullSurface(shell: HTMLElement, view: CalendarViewMode, anchorDate: Date): void {
+    const events = this.state.visibleEventRange ? this.getMockEvents() : [];
+    const options = {
+      anchorDate,
+      weekStartsOn: this.state.weekStartsOn,
+      showWeekends: this.state.showWeekends,
+      surface: "full" as CalendarSurface,
+    };
+
+    switch (view) {
+      case "month":
+        renderMonthView(shell, {
+          ...options,
+          events,
+          isLoading: this.state.loading,
+          error: this.state.error,
+          callbacks: {
+            onDateClick: (date: Date) => {
+              this.state = setSelectedDate(this.state, date);
+              this.renderBody();
+            },
+            onEventClick: (event: CalendarEvent) => {
+              this.onEventClickHandler(event);
+            },
+          },
+        });
+        break;
+
+      case "agenda":
+        renderAgendaView(shell, {
+          anchorDate,
+          events,
+          surface: "full",
+          isLoading: this.state.loading,
+          error: this.state.error,
+          callbacks: {
+            onDateClick: (date: Date) => {
+              this.state = setSelectedDate(this.state, date);
+              this.renderBody();
+            },
+            onEventClick: (event: CalendarEvent) => {
+              this.onEventClickHandler(event);
+            },
+          },
+        });
+        break;
+
+      case "week": {
+        const weekShell = shell.createDiv("ogc-week-view-container");
+        this.renderedWeekView = renderWeekView(weekShell, {
+          ...options,
+          events,
+          hourHeight: 60,
+          dayStartHour: 0,
+          dayEndHour: 24,
+          onEventClick: (event: CalendarEvent) => {
+            this.onEventClickHandler(event);
+          },
+        });
+        break;
+      }
+
+      case "day": {
+        const dayShell = shell.createDiv("ogc-day-view-container");
+        this.renderedDayView = renderDayView(dayShell, {
+          ...options,
+          events,
+          hourHeight: 60,
+          dayStartHour: 0,
+          dayEndHour: 24,
+          onEventClick: (event: CalendarEvent) => {
+            this.onEventClickHandler(event);
+          },
+        });
+        break;
+      }
+
+      default:
+        shell.setText(`Unsupported view: ${view}`);
+    }
+  }
+
+  private resolveSidebarStatus(): SidebarStatus {
+    if (this.state.loading) return "loading";
+    if (this.state.error) return "error";
+    return "ok";
+  }
+
+  private onEventClickHandler(event: CalendarEvent): void {
+    new Notice(`Event clicked: ${event.title}`, 2000);
+  }
+
+  private getMockEvents(): CalendarEvent[] {
+    return [];
   }
 
   private navigatePrev(): void {
@@ -169,6 +310,7 @@ export class CalendarView extends ItemView {
   }
 
   private expandToFull(): void {
+    this.state = setSurface(this.state, "full");
     this.app.workspace.getLeaf(false).setViewState({
       type: GOOGLE_CALENDAR_VIEW_TYPE,
       state: this.serializeState(),
@@ -176,7 +318,7 @@ export class CalendarView extends ItemView {
   }
 
   private sync(): void {
-    new Notice("Google Calendar sync coming soon", 4000);
+    new Notice("Google Calendar sync", 4000);
   }
 
   private serializeState(): Record<string, unknown> {
@@ -202,5 +344,34 @@ export class CalendarView extends ItemView {
 
   getState(): Record<string, unknown> {
     return this.serializeState();
+  }
+
+  setEventStatus(status: SidebarStatus, errorMessage?: string | null): void {
+    this.eventStatus = status;
+    this.eventErrorMessage = errorMessage ?? null;
+    this.state = setLoading(this.state, status === "loading");
+    this.state = setError(this.state, status === "error" ? (errorMessage ?? "Unknown error") : null);
+    if (this.state.surface === "sidebar") {
+      this.renderBody();
+    }
+  }
+
+  setSelectedDate(date: Date | null): void {
+    this.state = setSelectedDate(this.state, date);
+    if (this.state.surface === "sidebar") {
+      this.renderBody();
+    }
+  }
+
+  updateEvents(events: CalendarEvent[]): void {
+    if (this.renderedWeekView) {
+      this.renderedWeekView.updateEvents(events);
+    }
+    if (this.renderedDayView) {
+      this.renderedDayView.updateEvents(events);
+    }
+    if (this.state.surface === "sidebar") {
+      this.renderBody();
+    }
   }
 }
