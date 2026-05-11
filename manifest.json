@@ -1,0 +1,6 @@
+{
+  "id": "google-calendar",
+  "name": "Google Calendar",
+  "description": "View and edit Google Calendar events in Obsidian.",
+  "isDesktopOnly": true
+}

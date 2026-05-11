@@ -1,0 +1,16 @@
+{
+  "name": "obsidian-google-calendar",
+  "version": "1.0.0",
+  "description": "View and edit Google Calendar events in Obsidian.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs --production"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.28.0"
+  }
+}
