@@ -778,18 +778,18 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - OAuth approach, scopes, token storage, Milestone 3, security notes.
 - Checklist:
-  - [ ] Generate PKCE code verifier and S256 challenge.
-  - [ ] Generate and validate `state`.
-  - [ ] Start temporary loopback HTTP server on `127.0.0.1` random free port.
-  - [ ] Build authorization URL with narrow scopes and `access_type=offline`.
-  - [ ] Open system browser through Obsidian/Electron-safe method.
-  - [ ] Handle callback success, missing code, mismatched state, and OAuth error.
-  - [ ] Exchange authorization code for tokens.
-  - [ ] Refresh access token before API calls when expired.
-  - [ ] Revoke token on disconnect when possible and always clear local token state.
-  - [ ] Never log codes, tokens, refresh tokens, or authorization headers.
+  - [x] Generate PKCE code verifier and S256 challenge.
+  - [x] Generate and validate `state`.
+  - [x] Start temporary loopback HTTP server on `127.0.0.1` random free port.
+  - [x] Build authorization URL with narrow scopes and `access_type=offline`.
+  - [x] Open system browser through Obsidian/Electron-safe method.
+  - [x] Handle callback success, missing code, mismatched state, and OAuth error.
+  - [x] Exchange authorization code for tokens.
+  - [x] Refresh access token before API calls when expired.
+  - [x] Revoke token on disconnect when possible and always clear local token state.
+  - [x] Never log codes, tokens, refresh tokens, or authorization headers.
 - Verification:
-  - [ ] `npm run build` passes.
+  - [x] `npm run build` passes.
   - [ ] OAuth code path can be manually tested after user supplies Client ID.
 
 #### T06 - Google Calendar API Client
@@ -801,18 +801,18 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - Google API scopes, HTTP requests, Milestone 4, data types.
 - Checklist:
-  - [ ] Implement authenticated request helper using Obsidian `requestUrl`.
-  - [ ] Implement `calendarList.list`.
-  - [ ] Implement paginated `events.list`.
-  - [ ] Implement `events.insert`, `events.patch`, and `events.delete`.
-  - [ ] Refresh token and retry once on 401.
-  - [ ] Surface 403/429 and other API errors as typed errors for UI notices.
-  - [ ] Convert Google events into internal `CalendarEvent` values.
-  - [ ] Handle all-day dates and timed events.
-  - [ ] Ignore cancelled events for rendering unless needed later.
+  - [x] Implement authenticated request helper using Obsidian `requestUrl`.
+  - [x] Implement `calendarList.list`.
+  - [x] Implement paginated `events.list`.
+  - [x] Implement `events.insert`, `events.patch`, and `events.delete`.
+  - [x] Refresh token and retry once on 401.
+  - [x] Surface 403/429 and other API errors as typed errors for UI notices.
+  - [x] Convert Google events into internal `CalendarEvent` values.
+  - [x] Handle all-day dates and timed events.
+  - [x] Ignore cancelled events for rendering unless needed later.
 - Verification:
-  - [ ] `npm run build` passes.
-  - [ ] API methods have clear return types and no `any` escapes.
+  - [x] `npm run build` passes.
+  - [x] API methods have clear return types and no `any` escapes.
 
 #### T07 - View Registration And Shell Behavior
 
@@ -824,15 +824,15 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - Milestone 5, view shell requirements, settings/state types.
 - Checklist:
-  - [ ] Register one stable view type such as `google-calendar-view`.
-  - [ ] Open right sidebar view from command and ribbon.
-  - [ ] Open full main tab view from command.
-  - [ ] Add expand action from sidebar to full tab preserving date/view.
-  - [ ] Add toolbar with previous, next, today, title, view switcher, sync.
-  - [ ] Add `ResizeObserver` or safe fallback for compact/full behavior.
-  - [ ] Avoid duplicating business logic between surfaces.
+  - [x] Register one stable view type such as `google-calendar-view`.
+  - [x] Open right sidebar view from command and ribbon.
+  - [x] Open full main tab view from command.
+  - [x] Add expand action from sidebar to full tab preserving date/view.
+  - [x] Add toolbar with previous, next, today, title, view switcher, sync.
+  - [x] Add `ResizeObserver` or safe fallback for compact/full behavior.
+  - [x] Avoid duplicating business logic between surfaces.
 - Verification:
-  - [ ] `npm run build` passes.
+  - [x] `npm run build` passes.
   - [ ] View registration/unregistration is safe across reloads.
 
 #### T08 - Sidebar Compact UI

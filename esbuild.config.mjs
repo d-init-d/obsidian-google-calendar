@@ -5,6 +5,7 @@ const isProduction = process.argv.includes("--production");
 esbuild.build({
   entryPoints: ["src/main.ts"],
   bundle: true,
+  platform: "node",
   external: ["obsidian"],
   format: "cjs",
   outfile: "main.js",

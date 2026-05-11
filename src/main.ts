@@ -1,8 +1,10 @@
-import { Plugin, PluginSettingTab, Setting, App } from "obsidian";
+import { Plugin, PluginSettingTab, Setting, App, Notice } from "obsidian";
 import { PluginSettings, TokenState, CalendarViewMode } from "./types";
 import { DEFAULT_SETTINGS } from "./constants";
 import { loadSettings, saveSettings, loadTokenState, saveTokenState, getDefaultTokenState } from "./settings";
 import { createTokenStore } from "./google/tokenStore";
+import { runOAuthFlow, revokeToken } from "./google/oauth";
+import { CalendarView, GOOGLE_CALENDAR_VIEW_TYPE } from "./views/CalendarView";
 
 export default class GoogleCalendarPlugin extends Plugin {
   settings: PluginSettings = DEFAULT_SETTINGS;
@@ -13,10 +15,12 @@ export default class GoogleCalendarPlugin extends Plugin {
     await this.loadSettings();
     await this.loadTokenState();
 
+    this.registerView(GOOGLE_CALENDAR_VIEW_TYPE, (leaf) => new CalendarView(leaf));
+
     this.addRibbonIcon("calendar", "Open Google Calendar", () => {
       this.app.workspace.getLeaf(false).setViewState({
-        type: "empty",
-        state: {},
+        type: GOOGLE_CALENDAR_VIEW_TYPE,
+        state: { calendarView: this.settings.defaultView, anchorDate: new Date().toISOString() },
       });
     });
 
@@ -25,8 +29,8 @@ export default class GoogleCalendarPlugin extends Plugin {
       name: "Open Google Calendar in sidebar",
       callback: () => {
         this.app.workspace.getLeaf("right").setViewState({
-          type: "empty",
-          state: {},
+          type: GOOGLE_CALENDAR_VIEW_TYPE,
+          state: { calendarView: this.settings.defaultView, anchorDate: new Date().toISOString() },
         });
       },
     });
@@ -36,8 +40,20 @@ export default class GoogleCalendarPlugin extends Plugin {
       name: "Open Google Calendar in tab",
       callback: () => {
         this.app.workspace.getLeaf(false).setViewState({
-          type: "empty",
-          state: {},
+          type: GOOGLE_CALENDAR_VIEW_TYPE,
+          state: { calendarView: this.settings.defaultView, anchorDate: new Date().toISOString() },
+        });
+      },
+    });
+
+    this.addCommand({
+      id: "open-google-calendar-expand",
+      name: "Expand Google Calendar to full tab",
+      callback: () => {
+        const leaf = this.app.workspace.getLeaf(false);
+        leaf.setViewState({
+          type: GOOGLE_CALENDAR_VIEW_TYPE,
+          state: { calendarView: this.settings.defaultView, anchorDate: new Date().toISOString() },
         });
       },
     });
@@ -45,7 +61,9 @@ export default class GoogleCalendarPlugin extends Plugin {
     this.addCommand({
       id: "sync-google-calendar",
       name: "Sync Google Calendar",
-      callback: () => {},
+      callback: () => {
+        new Notice("Sync triggered - implementation in later tasks");
+      },
     });
 
     this.addSettingTab(new GoogleCalendarSettingTab(this.app, this));
@@ -123,9 +141,7 @@ class GoogleCalendarSettingTab extends PluginSettingTab {
 
     new Setting(section)
       .setName("Connection Status")
-      .setDesc(() => {
-        return isConnected ? "Connected to Google Calendar" : "Not connected";
-      });
+      .setDesc(isConnected ? "Connected to Google Calendar" : "Not connected");
 
     new Setting(section)
       .setName("Disconnect")
@@ -216,11 +232,45 @@ class GoogleCalendarSettingTab extends PluginSettingTab {
   }
 
   private async handleConnect() {
+    const clientId = this.plugin.settings.clientId.trim();
+    if (!clientId) return;
+
+    try {
+      const hasRefresh = this.plugin.tokenState.refreshToken !== null;
+      const tokenResp = await runOAuthFlow(clientId, hasRefresh);
+
+      this.plugin.tokenState = {
+        accessToken: tokenResp.access_token,
+        refreshToken: tokenResp.refresh_token ?? this.plugin.tokenState.refreshToken,
+        expiresAt: Date.now() + tokenResp.expires_in * 1000,
+        scope: tokenResp.scope,
+        tokenType: tokenResp.token_type,
+      };
+      await this.plugin.saveTokenState();
+    } catch (e) {
+      console.error("Google OAuth connection failed.", e);
+      new Notice("Google OAuth connection failed.");
+    }
+
+    this.display();
   }
 
   private async handleDisconnect() {
+    const hadToken = this.plugin.tokenState.accessToken !== "";
+    let revokeFailed = false;
+    if (hadToken) {
+      try {
+        await revokeToken(this.plugin.tokenState.accessToken);
+      } catch (e) {
+        revokeFailed = true;
+        console.error("Google token revoke failed.", e);
+      }
+    }
     this.plugin.tokenState = getDefaultTokenState();
     await this.plugin.saveTokenState();
+    if (revokeFailed) {
+      new Notice("Disconnected locally. Token revoke may need retry.");
+    }
     this.display();
   }
 }
