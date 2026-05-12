@@ -1,4 +1,4 @@
-import type { CalendarState, CalendarSurface, CalendarViewMode } from "../types";
+import type { CalendarState, CalendarSurface, CalendarViewMode, AuthStatus } from "../types";
 import { startOfDay } from "../utils/dateRange";
 
 export function createCalendarState(): CalendarState {
@@ -13,6 +13,7 @@ export function createCalendarState(): CalendarState {
     weekStartsOn: 0,
     showWeekends: true,
     visibleEventRange: null,
+    authStatus: "disconnected",
   };
 }
 
@@ -53,6 +54,10 @@ export function setVisibleEventRange(
   visibleEventRange: { start: Date; end: Date } | null,
 ): CalendarState {
   return { ...state, visibleEventRange };
+}
+
+export function setAuthStatus(state: CalendarState, authStatus: AuthStatus): CalendarState {
+  return { ...state, authStatus };
 }
 
 export function selectDate(state: CalendarState, date: Date): CalendarState {

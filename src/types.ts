@@ -75,7 +75,10 @@ export interface CalendarState {
   weekStartsOn: 0 | 1;
   showWeekends: boolean;
   visibleEventRange: DateRange | null;
+  authStatus: AuthStatus;
 }
+
+export type AuthStatus = "disconnected" | "needs-auth" | "connected";
 
 export interface EventCacheKey {
   range: DateRange;

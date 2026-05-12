@@ -17,6 +17,7 @@ export interface EventModalPayload {
   end: Date;
   location: string;
   description: string;
+  existingEvent?: { id: string; calendarId: string } | null;
 }
 
 export interface EventModalOptions {
@@ -388,7 +389,21 @@ export class EventModal extends Modal {
   }
 
   private handleDelete(): void {
-    this.result = { action: "delete" };
+    this.result = {
+      action: "delete",
+      event: this.existingEvent
+        ? {
+            title: this.existingEvent.title,
+            calendarId: this.existingEvent.calendarId,
+            allDay: this.existingEvent.allDay,
+            start: new Date(this.existingEvent.start),
+            end: new Date(this.existingEvent.end),
+            location: this.existingEvent.location ?? "",
+            description: this.existingEvent.description ?? "",
+            existingEvent: { id: this.existingEvent.id, calendarId: this.existingEvent.calendarId },
+          }
+        : undefined,
+    };
     this.close();
   }
 
@@ -455,7 +470,7 @@ export class EventModal extends Modal {
   }
 
   private buildPayload(): EventModalPayload {
-    return {
+    const payload: EventModalPayload = {
       title: this.titleInput.value.trim(),
       calendarId: this.calendarSelect.value,
       allDay: this.allDayChecked,
@@ -464,6 +479,10 @@ export class EventModal extends Modal {
       location: this.locationInput.value.trim(),
       description: this.descriptionInput.value.trim(),
     };
+    if (this.existingEvent) {
+      payload.existingEvent = { id: this.existingEvent.id, calendarId: this.existingEvent.calendarId };
+    }
+    return payload;
   }
 
   private displayErrors(errors: Record<string, string>): void {

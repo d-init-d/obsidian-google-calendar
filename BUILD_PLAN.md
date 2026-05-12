@@ -930,14 +930,14 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - Milestones 4, 7, 8, existing callback contracts, current renderer signatures.
 - Checklist:
-  - [ ] Wire create flow from empty date/time slot.
-  - [ ] Wire edit flow from event clicks in sidebar and full tab.
-  - [ ] Call API insert/patch/delete from modal callbacks.
-  - [ ] Refresh visible range after successful mutation.
-  - [ ] Show Obsidian notices for success/failure.
-  - [ ] Preserve selected date and view mode after refresh.
+  - [x] Wire create flow from empty date/time slot.
+  - [x] Wire edit flow from event clicks in sidebar and full tab.
+  - [x] Call API insert/patch/delete from modal callbacks.
+  - [x] Refresh visible range after successful mutation.
+  - [x] Show Obsidian notices for success/failure.
+  - [x] Preserve selected date and view mode after refresh.
 - Verification:
-  - [ ] `npm run build` passes.
+  - [x] `npm run build` passes.
   - [ ] Manual API test can be run after OAuth credentials are available.
 
 #### T13 - Sync, Cache, And Error States
@@ -950,15 +950,15 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - Milestone 9, cache requirements, current state and API contracts.
 - Checklist:
-  - [ ] Manual sync reloads visible range.
-  - [ ] Optional interval sync uses `registerInterval` and respects settings.
-  - [ ] No API calls occur when disconnected.
-  - [ ] Cache is invalidated after mutations.
-  - [ ] Render not connected, loading, empty, API error, and needs-auth states.
-  - [ ] Handle refresh-token failure by moving UI into needs-auth state.
+  - [x] Manual sync reloads visible range.
+  - [x] Optional interval sync uses `registerInterval` and respects settings.
+  - [x] No API calls occur when disconnected.
+  - [x] Cache is invalidated after mutations.
+  - [x] Render not connected, loading, empty, API error, and needs-auth states.
+  - [x] Handle refresh-token failure by moving UI into needs-auth state.
 - Verification:
-  - [ ] `npm run build` passes.
-  - [ ] Sync command is safe while disconnected.
+  - [x] `npm run build` passes.
+  - [x] Sync command is safe while disconnected.
 
 #### T14 - Settings And Calendar Selection Integration
 
@@ -970,14 +970,14 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - Milestones 2 and 4, calendar list loading, selected/default calendar settings.
 - Checklist:
-  - [ ] Load calendar list after connection.
-  - [ ] Let user choose selected calendar IDs if practical for MVP.
-  - [ ] Let user choose default calendar for new events.
-  - [ ] Persist calendar settings.
-  - [ ] Fall back to primary calendar when default is missing.
-  - [ ] Refresh visible events after calendar selection changes.
+  - [x] Load calendar list after connection.
+  - [x] Let user choose selected calendar IDs if practical for MVP.
+  - [x] Let user choose default calendar for new events.
+  - [x] Persist calendar settings.
+  - [x] Fall back to primary calendar when default is missing.
+  - [x] Refresh visible events after calendar selection changes.
 - Verification:
-  - [ ] `npm run build` passes.
+  - [x] `npm run build` passes.
   - [ ] Settings persist after reload.
 
 #### T15 - Accessibility, Responsive Polish, And Native Feel

@@ -1,21 +1,83 @@
 import { Plugin, PluginSettingTab, Setting, App, Notice } from "obsidian";
-import { PluginSettings, TokenState, CalendarViewMode } from "./types";
+import { PluginSettings, TokenState, CalendarViewMode, GoogleCalendarInfo } from "./types";
 import { DEFAULT_SETTINGS } from "./constants";
 import { loadSettings, saveSettings, loadTokenState, saveTokenState, getDefaultTokenState } from "./settings";
 import { createTokenStore } from "./google/tokenStore";
-import { runOAuthFlow, revokeToken } from "./google/oauth";
+import { runOAuthFlow, revokeToken, refreshAccessToken } from "./google/oauth";
+import { CalendarApiClient } from "./google/calendarApi";
 import { CalendarView, GOOGLE_CALENDAR_VIEW_TYPE } from "./views/CalendarView";
+
+let activeCalendarView: CalendarView | null = null;
+
+function getActiveCalendarView(): CalendarView | null {
+  return activeCalendarView;
+}
 
 export default class GoogleCalendarPlugin extends Plugin {
   settings: PluginSettings = DEFAULT_SETTINGS;
   tokenState: TokenState = getDefaultTokenState();
   tokenStore = createTokenStore(this);
+  private intervalId: number | null = null;
+  private loadedCalendars: GoogleCalendarInfo[] = [];
+
+  private createApiClient(): CalendarApiClient {
+    const tokenAccessor = {
+      accessToken: this.tokenState.accessToken,
+      refreshToken: this.tokenState.refreshToken,
+    };
+    return new CalendarApiClient(
+      tokenAccessor,
+      this.settings.clientId,
+      refreshAccessToken,
+      async (result) => {
+        this.tokenState = {
+          ...this.tokenState,
+          accessToken: result.access_token,
+          expiresAt: Date.now() + result.expires_in * 1000,
+          tokenType: result.token_type,
+        };
+        await this.saveTokenState();
+      }
+    );
+  }
+
+  async loadCalendars(): Promise<GoogleCalendarInfo[]> {
+    if (this.tokenState.accessToken === "") {
+      return [];
+    }
+    try {
+      const apiClient = this.createApiClient();
+      const calendars = await apiClient.listCalendars();
+      this.loadedCalendars = calendars;
+      return calendars;
+    } catch (e) {
+      console.error("Failed to load calendars.", e);
+      return [];
+    }
+  }
+
+  getLoadedCalendars(): GoogleCalendarInfo[] {
+    return this.loadedCalendars;
+  }
 
   async onload() {
     await this.loadSettings();
     await this.loadTokenState();
 
-    this.registerView(GOOGLE_CALENDAR_VIEW_TYPE, (leaf) => new CalendarView(leaf));
+    this.registerView(GOOGLE_CALENDAR_VIEW_TYPE, (leaf) => {
+      const view = new CalendarView(leaf);
+      view.setPluginContext({
+        settings: this.settings,
+        tokenState: this.tokenState,
+        saveTokenState: async () => {
+          await this.saveTokenState();
+        },
+        getLoadedCalendars: () => this.getLoadedCalendars(),
+        loadCalendars: async () => this.loadCalendars(),
+      });
+      activeCalendarView = view;
+      return view;
+    });
 
     this.addRibbonIcon("calendar", "Open Google Calendar", () => {
       this.app.workspace.getLeaf(false).setViewState({
@@ -62,30 +124,71 @@ export default class GoogleCalendarPlugin extends Plugin {
       id: "sync-google-calendar",
       name: "Sync Google Calendar",
       callback: () => {
-        new Notice("Sync triggered - implementation in later tasks");
+        const view = getActiveCalendarView();
+        if (view) {
+          view.sync();
+        } else {
+          new Notice("Open Google Calendar first", 3000);
+        }
       },
     });
 
     this.addSettingTab(new GoogleCalendarSettingTab(this.app, this));
+
+    this.setupIntervalSync();
   }
 
-  async loadSettings() {
+  async loadSettings(): Promise<void> {
     this.settings = await loadSettings(this);
   }
 
-  async saveSettings() {
+  async saveSettings(): Promise<void> {
     await saveSettings(this, this.settings);
+    const view = getActiveCalendarView();
+    if (view) {
+      view.updateSettings(this.settings);
+    }
+    this.setupIntervalSync();
   }
 
-  async loadTokenState() {
+  async loadTokenState(): Promise<void> {
     this.tokenState = await loadTokenState(this);
   }
 
-  async saveTokenState() {
+  async saveTokenState(): Promise<void> {
     await saveTokenState(this, this.tokenState);
+    const view = getActiveCalendarView();
+    if (view) {
+      view.updateTokenState(this.tokenState);
+    }
   }
 
-  onunload() {}
+  private setupIntervalSync(): void {
+    this.stopIntervalSync();
+
+    if (this.tokenState.accessToken === "") return;
+    if (this.settings.refreshIntervalMinutes <= 0) return;
+
+    const intervalMs = this.settings.refreshIntervalMinutes * 60 * 1000;
+    this.intervalId = window.setInterval(() => {
+      const view = getActiveCalendarView();
+      if (view) {
+        view.triggerSync();
+      }
+    }, intervalMs);
+  }
+
+  stopIntervalSync(): void {
+    if (this.intervalId !== null) {
+      window.clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+  }
+
+  async onunload() {
+    this.stopIntervalSync();
+    activeCalendarView = null;
+  }
 }
 
 class GoogleCalendarSettingTab extends PluginSettingTab {
@@ -96,14 +199,14 @@ class GoogleCalendarSettingTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
-  display() {
+  async display() {
     const { containerEl } = this;
     containerEl.empty();
 
     containerEl.createEl("h2", { text: "Google Calendar" });
 
     this.buildOAuthSection(containerEl);
-    this.buildCalendarSection(containerEl);
+    await this.buildCalendarSection(containerEl);
     this.buildSyncSection(containerEl);
   }
 
@@ -155,7 +258,7 @@ class GoogleCalendarSettingTab extends PluginSettingTab {
       });
   }
 
-  private buildCalendarSection(containerEl: HTMLElement) {
+  private async buildCalendarSection(containerEl: HTMLElement) {
     const section = containerEl.createDiv();
     section.createEl("h3", { text: "Calendar View" });
 
@@ -215,6 +318,86 @@ class GoogleCalendarSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         });
       });
+
+    const calendarSelectSection = containerEl.createDiv();
+    calendarSelectSection.createEl("h3", { text: "Calendar Selection" });
+
+    const isConnected = this.plugin.tokenState.accessToken !== "";
+
+    if (!isConnected) {
+      calendarSelectSection.createEl("p", {
+        text: "Connect to Google to see and select calendars.",
+        cls: "ogc-settings-placeholder",
+      });
+      return;
+    }
+
+    let calendars = this.plugin.getLoadedCalendars();
+    if (calendars.length === 0) {
+      calendars = await this.plugin.loadCalendars();
+    }
+
+    if (calendars.length === 0) {
+      calendarSelectSection.createEl("p", {
+        text: "No calendars found. Check permissions.",
+        cls: "ogc-settings-placeholder",
+      });
+      return;
+    }
+
+    const selectedIds = this.plugin.settings.selectedCalendarIds;
+    for (const cal of calendars) {
+      const calId = cal.id;
+      const isSelected = selectedIds.length === 0 || selectedIds.includes(calId);
+      new Setting(calendarSelectSection)
+        .setName(cal.summary)
+        .setDesc(cal.primary ? "Primary calendar" : calId)
+        .addToggle((toggle) => {
+          toggle.setValue(isSelected);
+          toggle.onChange(async (value) => {
+            let newSelected: string[];
+            if (value) {
+              if (!this.plugin.settings.selectedCalendarIds.includes(calId)) {
+                newSelected = [...this.plugin.settings.selectedCalendarIds, calId];
+              } else {
+                newSelected = this.plugin.settings.selectedCalendarIds;
+              }
+            } else {
+              newSelected = this.plugin.settings.selectedCalendarIds.filter((id) => id !== calId);
+            }
+            if (newSelected.length === 0) {
+              newSelected = calendars.map((c) => c.id);
+            }
+            this.plugin.settings.selectedCalendarIds = newSelected;
+            await this.plugin.saveSettings();
+            const view = getActiveCalendarView();
+            if (view) {
+              view.updateSettings(this.plugin.settings);
+              view.triggerCalendarSelectionChange();
+            }
+          });
+        });
+    }
+
+    new Setting(calendarSelectSection)
+      .setName("Default Calendar")
+      .setDesc("Calendar for new events")
+      .addDropdown((dropdown) => {
+        dropdown.addOption("", "None (primary)");
+        for (const cal of calendars) {
+          dropdown.addOption(cal.id, cal.summary);
+        }
+        const defaultId = this.plugin.settings.defaultCalendarId ?? "";
+        dropdown.setValue(defaultId);
+        dropdown.onChange(async (value) => {
+          this.plugin.settings.defaultCalendarId = value === "" ? null : value;
+          await this.plugin.saveSettings();
+          const view = getActiveCalendarView();
+          if (view) {
+            view.updateSettings(this.plugin.settings);
+          }
+        });
+      });
   }
 
   private buildSyncSection(containerEl: HTMLElement) {
@@ -227,6 +410,12 @@ class GoogleCalendarSettingTab extends PluginSettingTab {
         btn.setButtonText("Sync Calendar");
         btn.setTooltip("Force an immediate calendar sync");
         btn.onClick(async () => {
+          const view = getActiveCalendarView();
+          if (view) {
+            view.sync();
+          } else {
+            new Notice("Open Google Calendar first", 3000);
+          }
         });
       });
   }
@@ -247,6 +436,16 @@ class GoogleCalendarSettingTab extends PluginSettingTab {
         tokenType: tokenResp.token_type,
       };
       await this.plugin.saveTokenState();
+      this.plugin.setupIntervalSync();
+      const calendars = await this.plugin.loadCalendars();
+      const view = getActiveCalendarView();
+      if (view) {
+        view.updateTokenState(this.plugin.tokenState);
+        view.updateSettings(this.plugin.settings);
+        if (calendars.length > 0) {
+          view.updateCalendars(calendars);
+        }
+      }
     } catch (e) {
       console.error("Google OAuth connection failed.", e);
       new Notice("Google OAuth connection failed.");
@@ -268,6 +467,11 @@ class GoogleCalendarSettingTab extends PluginSettingTab {
     }
     this.plugin.tokenState = getDefaultTokenState();
     await this.plugin.saveTokenState();
+    this.plugin.stopIntervalSync();
+    const view = getActiveCalendarView();
+    if (view) {
+      view.updateTokenState(this.plugin.tokenState);
+    }
     if (revokeFailed) {
       new Notice("Disconnected locally. Token revoke may need retry.");
     }
