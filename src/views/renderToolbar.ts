@@ -40,27 +40,28 @@ function buildToolbarHtml(options: ToolbarOptions): string {
   const viewButtons = viewOptions
     .map((v) => {
       const active = v === view ? "active" : "";
-      return `<button class="ogc-btn ogc-btn--sm ogc-view-btn ${active}" data-view="${v}">${v.charAt(0).toUpperCase() + v.slice(1)}</button>`;
+      const label = `View ${v.charAt(0).toUpperCase() + v.slice(1)}`;
+      return `<button class="ogc-btn ogc-btn--sm ogc-view-btn ${active}" data-view="${v}" aria-label="${label}" aria-pressed="${v === view}">${v.charAt(0).toUpperCase() + v.slice(1)}</button>`;
     })
     .join("");
 
   let expandBtn = "";
   if (surface === "sidebar") {
-    expandBtn = `<button class="ogc-btn ogc-btn--icon ogc-expand-btn" title="Open in full tab">⤢</button>`;
+    expandBtn = `<button class="ogc-btn ogc-btn--icon ogc-expand-btn" title="Open in full tab" aria-label="Open in full tab">⤢</button>`;
   }
 
   return `
     <div class="ogc-toolbar">
       <div class="ogc-toolbar__left">
-        <button class="ogc-btn ogc-nav-btn" data-action="prev" title="Previous">‹</button>
-        <button class="ogc-btn ogc-nav-btn" data-action="next" title="Next">›</button>
-        <button class="ogc-btn ogc-today-btn" data-action="today">Today</button>
+        <button class="ogc-btn ogc-nav-btn" data-action="prev" title="Previous" aria-label="Previous">‹</button>
+        <button class="ogc-btn ogc-nav-btn" data-action="next" title="Next" aria-label="Next">›</button>
+        <button class="ogc-btn ogc-today-btn" data-action="today" aria-label="Go to today">Today</button>
       </div>
-      <div class="ogc-toolbar__title">${title}</div>
+      <div class="ogc-toolbar__title" aria-live="polite">${title}</div>
       <div class="ogc-toolbar__right">
-        <div class="ogc-view-switcher">${viewButtons}</div>
+        <div class="ogc-view-switcher" role="group" aria-label="Calendar view selection">${viewButtons}</div>
         ${expandBtn}
-        <button class="ogc-btn ogc-btn--icon ogc-sync-btn" data-action="sync" title="Sync">↻</button>
+        <button class="ogc-btn ogc-btn--icon ogc-sync-btn" data-action="sync" title="Sync" aria-label="Sync calendar">↻</button>
       </div>
     </div>
   `;

@@ -77,15 +77,19 @@ function buildMonthGridHtml(cells: DayCellData[], weekdays: WeekdayIndex[], opti
       const color = getEventColor(event);
       const timeStr = formatEventTime(event);
       const timeHtml = timeStr ? `<span class="ogc-event-chip__time">${timeStr}</span>` : "";
-      return `<div class="ogc-event-chip" 
-        data-event-id="${event.id}" 
+      const chipTitle = `${event.title}${timeStr ? ` - ${timeStr}` : ""}`;
+      return `<div class="ogc-event-chip"
+        data-event-id="${event.id}"
         data-date-key="${dateKey}"
         style="background-color: ${color}; color: #fff;"
+        role="button"
+        tabindex="0"
+        aria-label="${chipTitle}"
       >${timeHtml}<span class="ogc-event-chip__title">${event.title}</span></div>`;
     }).join("");
 
     const moreIndicator = overflow > 0
-      ? `<div class="ogc-day-cell__more" data-date-key="${dateKey}" data-overflow="${overflow}">+${overflow} more</div>`
+      ? `<div class="ogc-day-cell__more" data-date-key="${dateKey}" data-overflow="${overflow}" role="button" tabindex="0" aria-label="Show ${overflow} more event${overflow > 1 ? "s" : ""}">+${overflow} more</div>`
       : "";
 
     return `<div class="ogc-day-cell ${outOfMonthClass} ${todayClass} ${weekendClass}" data-date-key="${dateKey}">
@@ -199,6 +203,15 @@ export function renderMonthView(container: HTMLElement, options: MonthViewOption
       }
     });
 
+    chip.addEventListener("keydown", (e) => {
+      if (event && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        if (options.callbacks?.onEventClick) {
+          options.callbacks.onEventClick(event, date);
+        }
+      }
+    });
+
     chip.addEventListener("dblclick", () => {
       if (event && options.callbacks?.onEventDoubleClick) {
         options.callbacks.onEventDoubleClick(event, date);
@@ -214,17 +227,27 @@ export function renderMonthView(container: HTMLElement, options: MonthViewOption
     const [y, m, d] = dateKey.split("-").map(Number);
     const date = new Date(y, m, d);
 
-    cell.addEventListener("click", () => {
+    const activateCell = () => {
       if (options.callbacks?.onDateClick) {
         options.callbacks.onDateClick(date);
       }
-    });
+    };
 
-    cell.addEventListener("dblclick", () => {
+    const activateCellDbl = () => {
       if (options.callbacks?.onDateDoubleClick) {
         options.callbacks.onDateDoubleClick(date);
       } else if (options.callbacks?.onCreateEvent) {
         options.callbacks.onCreateEvent(date);
+      }
+    };
+
+    cell.addEventListener("click", activateCell);
+    cell.addEventListener("dblclick", activateCellDbl);
+
+    cell.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        activateCell();
       }
     });
   });
@@ -242,6 +265,15 @@ export function renderMonthView(container: HTMLElement, options: MonthViewOption
     indicator.addEventListener("click", () => {
       if (options.callbacks?.onMoreClick) {
         options.callbacks.onMoreClick(date, dayEvents);
+      }
+    });
+
+    indicator.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (options.callbacks?.onMoreClick) {
+          options.callbacks.onMoreClick(date, dayEvents);
+        }
       }
     });
   });

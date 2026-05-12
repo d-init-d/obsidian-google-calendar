@@ -125,6 +125,7 @@ export class EventModal extends Modal {
       class: "ogc-field__input",
       placeholder: "Event title",
       value: this.existingEvent?.title ?? "",
+      "aria-label": "Event title",
     }) as HTMLInputElement;
 
     container.appendChild(label);
@@ -164,11 +165,13 @@ export class EventModal extends Modal {
   private buildAllDayField(parent: HTMLElement): void {
     const container = createElement("div", { class: "ogc-field ogc-all-day-field" });
     const label = createElement("label", { class: "ogc-checkbox-label" });
+    label.htmlFor = "ogc-event-all-day";
 
     this.allDayToggle = createElement("input", {
       id: "ogc-event-all-day",
       type: "checkbox",
       class: "ogc-checkbox",
+      ariaLabel: "All-day event",
     }) as HTMLInputElement;
 
     if (this.existingEvent) {
@@ -195,18 +198,21 @@ export class EventModal extends Modal {
     const startContainer = createElement("div", { class: "ogc-field ogc-datetime-field ogc-start-field" });
     const startLabel = createElement("label", { class: "ogc-field__label" });
     startLabel.textContent = "Start";
+    startLabel.htmlFor = "ogc-event-start-date";
 
     const startDateRow = createElement("div", { class: "ogc-datetime-row" });
     this.startDateInput = createElement("input", {
       id: "ogc-event-start-date",
       type: "date",
       class: "ogc-field__input ogc-date-input",
+      "aria-label": "Event start date",
     }) as HTMLInputElement;
 
     this.startTimeInput = createElement("input", {
       id: "ogc-event-start-time",
       type: "time",
       class: "ogc-field__input ogc-time-input",
+      "aria-label": "Event start time",
     }) as HTMLInputElement;
 
     const startDefault = this.getDefaultStart();
@@ -221,18 +227,21 @@ export class EventModal extends Modal {
     const endContainer = createElement("div", { class: "ogc-field ogc-datetime-field ogc-end-field" });
     const endLabel = createElement("label", { class: "ogc-field__label" });
     endLabel.textContent = "End";
+    endLabel.htmlFor = "ogc-event-end-date";
 
     const endDateRow = createElement("div", { class: "ogc-datetime-row" });
     this.endDateInput = createElement("input", {
       id: "ogc-event-end-date",
       type: "date",
       class: "ogc-field__input ogc-date-input",
+      ariaLabel: "Event end date",
     }) as HTMLInputElement;
 
     this.endTimeInput = createElement("input", {
       id: "ogc-event-end-time",
       type: "time",
       class: "ogc-field__input ogc-time-input",
+      ariaLabel: "Event end time",
     }) as HTMLInputElement;
 
     const endDefault = this.getDefaultEnd();
@@ -259,6 +268,7 @@ export class EventModal extends Modal {
       class: "ogc-field__input",
       placeholder: "Add location",
       value: this.existingEvent?.location ?? "",
+      ariaLabel: "Event location",
     }) as HTMLInputElement;
 
     container.appendChild(label);
@@ -276,6 +286,7 @@ export class EventModal extends Modal {
       class: "ogc-field__input ogc-textarea",
       placeholder: "Add description",
       rows: "3",
+      ariaLabel: "Event description",
     }) as HTMLTextAreaElement;
 
     if (this.existingEvent?.description) {

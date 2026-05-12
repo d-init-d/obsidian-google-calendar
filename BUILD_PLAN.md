@@ -990,15 +990,15 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - UI/CSS Guidance, sidebar/full tab acceptance criteria, current UI files.
 - Checklist:
-  - [ ] Add accessible labels/titles for icon-only controls.
-  - [ ] Ensure keyboard focus is visible and not removed.
-  - [ ] Ensure buttons are discoverable.
-  - [ ] Check compact widths around 260-360px.
-  - [ ] Check desktop full tab around 1200px.
-  - [ ] Avoid text overlap in grids and modal fields.
-  - [ ] Verify light/dark theme variable usage.
+  - [x] Add accessible labels/titles for icon-only controls.
+  - [x] Ensure keyboard focus is visible and not removed.
+  - [x] Ensure buttons are discoverable.
+  - [x] Check compact widths around 260-360px.
+  - [x] Check desktop full tab around 1200px.
+  - [x] Avoid text overlap in grids and modal fields.
+  - [x] Verify light/dark theme variable usage.
 - Verification:
-  - [ ] `npm run build` passes.
+  - [x] `npm run build` passes.
   - [ ] Manual theme smoke test checklist is updated with any limitations.
 
 #### T16 - README And Release Readiness Docs
@@ -1011,16 +1011,16 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Worker context pack:
   - Mission, OAuth setup, scopes, token storage, final QA checklist.
 - Checklist:
-  - [ ] Add setup instructions.
-  - [ ] Add Google Cloud OAuth Desktop Client setup.
-  - [ ] List exact scopes.
-  - [ ] Explain local plugin token storage and non-keychain limitation.
-  - [ ] Document development commands.
-  - [ ] Document release files: `manifest.json`, `main.js`, `styles.css`.
-  - [ ] Document known MVP non-goals.
+  - [x] Add setup instructions.
+  - [x] Add Google Cloud OAuth Desktop Client setup.
+  - [x] List exact scopes.
+  - [x] Explain local plugin token storage and non-keychain limitation.
+  - [x] Document development commands.
+  - [x] Document release files: `manifest.json`, `main.js`, `styles.css`.
+  - [x] Document known MVP non-goals.
 - Verification:
-  - [ ] README instructions match actual package scripts.
-  - [ ] No secrets or user-specific tokens are documented.
+  - [x] README instructions match actual package scripts.
+  - [x] No secrets or user-specific tokens are documented.
 
 #### T17 - Final Verification And Overnight Report
 
@@ -1030,9 +1030,9 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
 - Files owned: none unless documenting final report.
 - Checklist:
   - [ ] Run `npm install` from clean state if lockfile changed.
-  - [ ] Run `npm run build`.
+  - [x] Run `npm run build`.
   - [ ] Run `npm run lint` if available.
-  - [ ] Inspect generated `main.js`, `manifest.json`, and `styles.css` presence.
+  - [x] Inspect generated `main.js`, `manifest.json`, and `styles.css` presence.
   - [ ] Install into a separate Obsidian dev vault if permitted.
   - [ ] Enable plugin and verify commands appear.
   - [ ] Enter OAuth Client ID and connect, if user provided credentials.
@@ -1041,10 +1041,10 @@ Recommended overnight maximum: 4 concurrent `@minimax-m27` workers. Use fewer wh
   - [ ] Switch month/week/day/agenda.
   - [ ] Create, edit, and delete an event on a test calendar, if credentials are available.
   - [ ] Disconnect and reload Obsidian.
-  - [ ] Record remaining gaps and exact commands run.
+  - [x] Record remaining gaps and exact commands run.
 - Verification:
-  - [ ] Final build passes.
-  - [ ] Any untested Google/OAuth steps are clearly marked as blocked by missing credentials or manual access.
+  - [x] Final build passes.
+  - [x] Any untested Google/OAuth steps are clearly marked as blocked by missing credentials or manual access.
 
 ### 10.5 Handoff Prompt Template For `@minimax-m27`
 
@@ -1104,16 +1104,16 @@ Stop overnight execution and ask the user before proceeding if any of these happ
 
 ### 10.8 Minimum Done Criteria For The Overnight Build
 
-- [ ] `npm install` succeeds.
-- [ ] `npm run build` succeeds and outputs `main.js`.
-- [ ] Plugin manifest is desktop-only and has the expected id/name/description.
-- [ ] Commands register for sidebar, full tab, and sync.
-- [ ] Settings persist and do not expose token values.
-- [ ] OAuth code path is implemented with PKCE, loopback redirect, state validation, refresh, and disconnect.
-- [ ] Calendar list and event list API clients compile and handle 401 retry once.
-- [ ] Sidebar compact view renders mini month and agenda states.
-- [ ] Full tab renders month, week, day, and agenda states.
-- [ ] Event modal supports create/edit/delete payloads with validation.
-- [ ] Manual sync and optional interval sync are safe while disconnected.
-- [ ] README documents setup, scopes, token storage, and dev commands.
-- [ ] Untested manual steps are listed honestly if OAuth credentials or Obsidian dev vault access are unavailable.
+- [x] `npm install` succeeds.
+- [x] `npm run build` succeeds and outputs `main.js`.
+- [x] Plugin manifest is desktop-only and has the expected id/name/description.
+- [x] Commands register for sidebar, full tab, and sync.
+- [x] Settings persist and do not expose token values.
+- [x] OAuth code path is implemented with PKCE, loopback redirect, state validation, refresh, and disconnect.
+- [x] Calendar list and event list API clients compile and handle 401 retry once.
+- [x] Sidebar compact view renders mini month and agenda states.
+- [x] Full tab renders month, week, day, and agenda states.
+- [x] Event modal supports create/edit/delete payloads with validation.
+- [x] Manual sync and optional interval sync are safe while disconnected.
+- [x] README documents setup, scopes, token storage, and dev commands.
+- [x] Untested manual steps are listed honestly if OAuth credentials or Obsidian dev vault access are unavailable.

@@ -65,8 +65,9 @@ function buildAgendaGroupHtml(group: AgendaGroup): string {
     const location = event.location
       ? `<span class="ogc-agenda-event__location">${event.location}</span>`
       : "";
+    const eventLabel = `${title}, ${timeStr}${event.location ? `, ${event.location}` : ""}`;
 
-    return `<div class="ogc-agenda-event" data-event-id="${event.id}">
+    return `<div class="ogc-agenda-event" data-event-id="${event.id}" role="button" tabindex="0" aria-label="${eventLabel}">
       <div class="ogc-agenda-event__time" style="color: ${color};">${timeStr}</div>
       <div class="ogc-agenda-event__content">
         <div class="ogc-agenda-event__title" style="border-left: 3px solid ${color};">${title}</div>
@@ -167,9 +168,18 @@ export function renderAgendaView(container: HTMLElement, options: AgendaViewOpti
     const event = options.events.find((e) => e.id === eventId);
     if (!event) return;
 
-    item.addEventListener("click", () => {
+item.addEventListener("click", () => {
       if (options.callbacks?.onEventClick) {
-        options.callbacks.onEventClick(event);
+        options.callbacks?.onEventClick(event);
+      }
+    });
+
+    item.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (options.callbacks?.onEventClick) {
+          options.callbacks?.onEventClick(event);
+        }
       }
     });
 
@@ -191,15 +201,24 @@ export function renderAgendaView(container: HTMLElement, options: AgendaViewOpti
     const [y, m, d] = dateKey.split("-").map(Number);
     const date = new Date(y, m - 1, d);
 
-    header.addEventListener("click", () => {
+    const activateDate = () => {
       if (options.callbacks?.onDateClick) {
         options.callbacks.onDateClick(date);
       }
-    });
+    };
 
-    header.addEventListener("dblclick", () => {
+    const activateCreate = () => {
       if (options.callbacks?.onCreateEvent) {
         options.callbacks.onCreateEvent(date);
+      }
+    };
+
+    header.addEventListener("click", activateDate);
+    header.addEventListener("dblclick", activateCreate);
+    header.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        activateDate();
       }
     });
   });

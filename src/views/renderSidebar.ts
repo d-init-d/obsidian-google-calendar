@@ -56,19 +56,20 @@ function buildMiniMonthHtml(days: MiniMonthDay[], anchorMonth: Date, onPrev: () 
 
     const dateKey = day.date.toISOString();
     const dot = day.hasEvents ? `<span class="ogc-mini-month__dot" aria-hidden="true"></span>` : "";
-    return `<div class="${classes}" data-date-key="${dateKey}">${day.date.getDate()}${dot}</div>`;
+    const dayLabel = `Navigate to ${day.date.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}`;
+    return `<div class="${classes}" data-date-key="${dateKey}" role="button" tabindex="0" aria-label="${dayLabel}">${day.date.getDate()}${dot}</div>`;
   }).join("");
 
   return `
     <div class="ogc-mini-month">
       <div class="ogc-mini-month__header">
-        <button class="ogc-btn ogc-btn--icon ogc-mini-month__nav" data-action="prev" title="Previous month">‹</button>
-        <span class="ogc-mini-month__title">${monthLabel}</span>
-        <button class="ogc-btn ogc-btn--icon ogc-mini-month__nav" data-action="next" title="Next month">›</button>
+        <button class="ogc-btn ogc-btn--icon ogc-mini-month__nav" data-action="prev" title="Previous month" aria-label="Previous month">‹</button>
+        <span class="ogc-mini-month__title" aria-live="polite">${monthLabel}</span>
+        <button class="ogc-btn ogc-btn--icon ogc-mini-month__nav" data-action="next" title="Next month" aria-label="Next month">›</button>
       </div>
-      <div class="ogc-mini-month__grid">
-        <div class="ogc-mini-month__weekdays">${weekdayHeaders}</div>
-        <div class="ogc-mini-month__days">${dayCells}</div>
+      <div class="ogc-mini-month__grid" role="grid" aria-label="Mini calendar">
+        <div class="ogc-mini-month__weekdays" role="row">${weekdayHeaders}</div>
+        <div class="ogc-mini-month__days" role="rowgroup">${dayCells}</div>
       </div>
     </div>
   `;
@@ -88,7 +89,8 @@ function buildAgendaHtml(events: CalendarEvent[], today: Date, callbacks?: Sideb
         .map((event) => {
           const timeStr = event.allDay ? "All day" : formatTime(event.start);
           const title = event.title || "(No title)";
-          return `<div class="ogc-sidebar-event" data-event-id="${event.id}">
+          const eventLabel = `${title}, ${timeStr}`;
+          return `<div class="ogc-sidebar-event" data-event-id="${event.id}" role="button" tabindex="0" aria-label="${eventLabel}">
             <span class="ogc-sidebar-event__time">${timeStr}</span>
             <span class="ogc-sidebar-event__title">${title}</span>
           </div>`;
@@ -232,8 +234,8 @@ export function renderSidebar(container: HTMLElement, options: SidebarOptions): 
   header.innerHTML = `
     <span class="ogc-sidebar-header__title">${options.title}</span>
     <div class="ogc-sidebar-header__actions">
-      <button class="ogc-btn ogc-btn--icon ogc-sidebar-header__sync" data-action="sync" title="Sync">↻</button>
-      <button class="ogc-btn ogc-btn--icon ogc-sidebar-header__expand" data-action="expand" title="Expand">⤢</button>
+      <button class="ogc-btn ogc-btn--icon ogc-sidebar-header__sync" data-action="sync" title="Sync" aria-label="Sync calendar">↻</button>
+      <button class="ogc-btn ogc-btn--icon ogc-sidebar-header__expand" data-action="expand" title="Expand" aria-label="Expand sidebar">⤢</button>
     </div>
   `;
   shell.appendChild(header);
@@ -267,16 +269,30 @@ export function renderSidebar(container: HTMLElement, options: SidebarOptions): 
 
   const agendaSection = document.createElement("div");
   agendaSection.className = "ogc-sidebar-agenda-container";
-  agendaSection.innerHTML = buildAgendaHtml(events, startOfDay(new Date()), callbacks);
+agendaSection.innerHTML = buildAgendaHtml(events, startOfDay(new Date()), callbacks);
   shell.appendChild(agendaSection);
 
-  header.querySelectorAll<HTMLButtonElement>("[data-action]").forEach((btn) => {
-    const action = btn.dataset["action"];
-    if (action === "sync" && callbacks?.onSync) {
-      btn.addEventListener("click", callbacks.onSync);
-    } else if (action === "expand" && callbacks?.onExpand) {
-      btn.addEventListener("click", callbacks.onExpand);
-    }
+  const agendaEventItems = agendaSection.querySelectorAll<HTMLElement>(".ogc-sidebar-event[data-event-id]");
+  agendaEventItems.forEach((item) => {
+    const eventId = item.dataset["eventId"];
+    if (!eventId) return;
+
+    const event = events.find((e) => e.id === eventId);
+    if (!event) return;
+
+    const activateEvent = () => {
+      if (callbacks?.onEventClick) {
+        callbacks.onEventClick(event);
+      }
+    };
+
+    item.addEventListener("click", activateEvent);
+    item.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        activateEvent();
+      }
+    });
   });
 
   const miniNavBtns = miniMonthSection.querySelectorAll<HTMLButtonElement>(".ogc-mini-month__nav");
@@ -317,9 +333,17 @@ export function renderSidebar(container: HTMLElement, options: SidebarOptions): 
     if (!y) return;
     const date = new Date(Number(y), Number(m) - 1, Number(d));
 
-    cell.addEventListener("click", () => {
+    const activateDate = () => {
       if (callbacks?.onDateClick) {
         callbacks.onDateClick(date);
+      }
+    };
+
+    cell.addEventListener("click", activateDate);
+    cell.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        activateDate();
       }
     });
   });
@@ -332,9 +356,17 @@ export function renderSidebar(container: HTMLElement, options: SidebarOptions): 
     const event = events.find((e) => e.id === eventId);
     if (!event) return;
 
-    item.addEventListener("click", () => {
+    const activateEvent = () => {
       if (callbacks?.onEventClick) {
         callbacks.onEventClick(event);
+      }
+    };
+
+    item.addEventListener("click", activateEvent);
+    item.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        activateEvent();
       }
     });
   });
